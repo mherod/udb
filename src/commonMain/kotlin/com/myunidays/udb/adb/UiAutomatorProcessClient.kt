@@ -14,14 +14,18 @@ class UiAutomatorProcessClient(private val adbClient: AdbClient) : UiAutomatorCl
                         execCommand("shell uiautomator dump")
                             .flatMapConcat {
                                 execCommand("pull /sdcard/window_dump.xml")
-                                execCommand("shell cat window_dump.xml")
+                                    .flatMapConcat {
+                                        execCommand("shell cat window_dump.xml")
+                                    }
                             }
                     emitAll(fallback)
                 }
+                .filterNot { it.startsWith("ERROR:", ignoreCase = true) }
         }.toList()
             .joinToString("")
             .substringAfter('<')
             .substringBeforeLast('>')
+            .let { "<$it>" }
         emit(dump)
     }
 }
