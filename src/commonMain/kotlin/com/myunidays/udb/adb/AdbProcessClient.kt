@@ -28,7 +28,6 @@ class AdbProcessClient(private val adb: String) : AdbClient {
             .mapNotNull { s ->
                 runOrNull {
                     s.splitOnSpacing().takeIf { it.size == 2 }?.let { parsedDeviceLine ->
-                        println(parsedDeviceLine)
                         AdbDevice(
                             name = parsedDeviceLine.first(),
                             status = matchByName(parsedDeviceLine[1])
