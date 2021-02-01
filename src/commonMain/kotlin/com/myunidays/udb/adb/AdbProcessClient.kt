@@ -69,7 +69,7 @@ class AdbProcessClient(private val adb: String) : AdbClient {
         val all = devices()
             .filterNot { it.status == AdbDevice.Status.Offline }
             .onEmpty {
-                error("no connected devices")
+                error("no devices/emulators found")
             }
             .flatMapMerge { device ->
                 exec("$adb -s ${device.name} $command")
