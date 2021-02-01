@@ -15,6 +15,9 @@ class ApplicationArgParser(
 
     init {
         when (rawArgs.firstOrNull()) {
+            null -> {
+                println("Usage: udb --help")
+            }
             "adb" -> {
                 adb.execArgsPrint(rawArgs)
             }
