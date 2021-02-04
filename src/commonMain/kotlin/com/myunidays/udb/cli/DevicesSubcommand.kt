@@ -15,6 +15,9 @@ class DevicesSubcommand(
     actionDescription = "Output connected devices and emulators"
 ) {
     override fun execute() = runBlocking {
-        udb.listDevices().collect { println(it) }
+
+        udb.listDevices().collect {
+            println(it)
+        }
     }
 }

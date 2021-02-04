@@ -25,6 +25,7 @@ class ApplicationArgParser(
                 subcommands(
                     VersionSubcommand(),
                     DevicesSubcommand(),
+                    EmulatorSubcommand(),
                     LogcatSubcommand(),
                     UiSubcommand(),
                 )
