@@ -38,7 +38,7 @@ class EmulatorSubcommand(
                 .flatMapConcat { avdName ->
                     emulatorClient.launch(avdName)
                 }.collect { line ->
-                    println(line)
+//                    println(line)
                 }
         }
     }

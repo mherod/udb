@@ -28,6 +28,7 @@ class ApplicationArgParser(
                     EmulatorSubcommand(),
                     LogcatSubcommand(),
                     UiSubcommand(),
+                    OpenSubcommand()
                 )
             }
         }
