@@ -21,18 +21,36 @@ class EmulatorSubcommand(
     name = "emulator",
     actionDescription = "Operate on emulators"
 ) {
-    private val start: Boolean by option(ArgType.Boolean).default(false)
-    private val silent: Boolean by option(ArgType.Boolean).default(false)
-    private val stop: Boolean by option(ArgType.Boolean).default(false)
-    private val list: Boolean by option(ArgType.Boolean).default(false)
+    private val start: Boolean by option(
+        type = ArgType.Boolean,
+        fullName = "start",
+        shortName = "s",
+        description = "Start an emulator",
+    ).default(false)
+
+    private val silent: Boolean by option(
+        type = ArgType.Boolean,
+        fullName = "silent",
+        shortName = "q",
+        description = "New emulators are started hidden, not showing the window or sound",
+    ).default(false)
+
+    private val stop: Boolean by option(
+        type = ArgType.Boolean,
+        fullName = "stop",
+        shortName = "f",
+        description = "Request currently opened emulator to close",
+    ).default(false)
+
+    private val list: Boolean by option(
+        type = ArgType.Boolean,
+        fullName = "list",
+        shortName = "l",
+        description = "List avds to launch",
+    ).default(false)
 
     @FlowPreview
     override fun execute() = runBlocking {
-
-        println("start = $start")
-        println("stop = $stop")
-        println("list = $list")
-        println("silent = $silent")
 
         if (list) {
             emulatorClient.listAvds().collect {
