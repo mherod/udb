@@ -22,6 +22,7 @@ class AdbProcessClient(private val adb: String) : AdbClient {
     }
 
     override fun devices(): Flow<AdbDevice> =
+        // adb devices -l
         exec("$adb devices")
             .filter { it.isNotBlank() }
             .filterNot { it.startsWith('*') }
@@ -63,10 +64,22 @@ class AdbProcessClient(private val adb: String) : AdbClient {
 
     override fun uiautomator(): UiAutomatorClient = UiAutomatorProcessClient(adbClient = this)
 
+    override fun connect(host: String): Flow<String> = exec("$adb connect $host")
+
+    override fun emu(kill: Boolean): Flow<String> = exec(
+        command = buildString {
+            append(adb)
+            append(" emu")
+            if (kill) {
+                append(" kill")
+            }
+        }
+    )
+
     @FlowPreview
     override fun execCommand(command: String): Flow<String> = flow {
         val all = devices()
-            .filterNot { it.status == AdbDevice.Status.Offline }
+            .filter { it.status == AdbDevice.Status.Device }
             .onEmpty {
                 error("no devices/emulators found")
             }

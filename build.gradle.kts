@@ -143,7 +143,7 @@ task<JavaExec>("run") {
     group = "run"
     dependsOn(tasks.getByName("jvmMainClasses"))
     main = "com.myunidays.udb.cli.MainKt"
-    args("logcat")
+    args("emulator", "--start")
     val jvm by kotlin.targets.getting
     val main: KotlinCompilation<KotlinCommonOptions> by jvm.compilations
     val runtimeDependencies = (main as KotlinCompilationToRunnableFiles<KotlinCommonOptions>).runtimeDependencyFiles

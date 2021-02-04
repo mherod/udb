@@ -3,8 +3,10 @@ package com.myunidays.udb.cli
 import com.myunidays.udb.Container
 import com.myunidays.udb.Udb
 import com.myunidays.udb.runBlocking
+import kotlinx.cli.ArgType
 import kotlinx.cli.ExperimentalCli
 import kotlinx.cli.Subcommand
+import kotlinx.cli.default
 import kotlinx.coroutines.flow.collect
 
 @ExperimentalCli
@@ -14,10 +16,26 @@ class DevicesSubcommand(
     name = "devices",
     actionDescription = "Output connected devices and emulators"
 ) {
+
+    private val wifiScan: Boolean by option(
+        type = ArgType.Boolean,
+        fullName = "wifi-scan",
+        shortName = "wifi-scan",
+    ).default(false)
+
     override fun execute() = runBlocking {
 
-        udb.listDevices().collect {
-            println(it)
+        when {
+            wifiScan -> {
+                udb.discoverAndConnect().collect {
+                    println(it)
+                }
+            }
+            else -> {
+                udb.listDevices().collect {
+                    println(it)
+                }
+            }
         }
     }
 }

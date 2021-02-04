@@ -15,7 +15,7 @@ class EmulatorClientBroker : ProcessExecutor {
     }
 
     override fun execCommand(command: String): Flow<String> {
-        return exec("$path $command")
+        return bash(command = "$path ${command.trim()}")
     }
 
     operator fun getValue(container: Container, property: KProperty<*>): EmulatorClient = client

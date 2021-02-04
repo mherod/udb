@@ -5,6 +5,6 @@ data class AdbDevice(
     val status: Status,
 ) {
     enum class Status {
-        Device, Offline
+        Device, Offline, Unauthorized
     }
 }

@@ -11,6 +11,8 @@ interface AdbClient : ProcessExecutor {
     fun logs(): Flow<AdbLogcatLine>
     fun shell(): AdbShellClient
     fun uiautomator(): UiAutomatorClient
+    fun connect(host: String): Flow<String>
+    fun emu(kill: Boolean = false): Flow<String>
 }
 
 /*
