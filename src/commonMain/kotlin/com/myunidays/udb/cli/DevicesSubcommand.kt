@@ -19,13 +19,24 @@ class DevicesSubcommand(
 
     private val wifiScan: Boolean by option(
         type = ArgType.Boolean,
-        fullName = "wifi-scan",
-        shortName = "wifi-scan",
+        fullName = "network-scan",
+        shortName = "n",
+    ).default(false)
+
+    private val fly: Boolean by option(
+        type = ArgType.Boolean,
+        fullName = "fly",
+        shortName = "f",
     ).default(false)
 
     override fun execute() = runBlocking {
 
         when {
+            fly -> {
+                udb.goWireless().collect {
+                    println(it)
+                }
+            }
             wifiScan -> {
                 udb.discoverAndConnect().collect {
                     println(it)

@@ -10,7 +10,10 @@ import com.myunidays.udb.util.splitOnSpacing
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.*
 
-class AdbProcessClient(private val adb: String) : AdbClient {
+data class AdbProcessClient(
+    private val adb: String,
+    private val adbDevice: AdbDevice? = null,
+) : AdbClient {
 
     override fun version(): String = runBlocking {
         exec("$adb --version")
@@ -36,6 +39,8 @@ class AdbProcessClient(private val adb: String) : AdbClient {
                     }
                 }
             }
+
+    override fun singleDeviceClient(target: AdbDevice): AdbClient = copy(adbDevice = target)
 
     @FlowPreview
     override fun logs(): Flow<AdbLogcatLine> =
@@ -66,6 +71,8 @@ class AdbProcessClient(private val adb: String) : AdbClient {
 
     override fun connect(host: String): Flow<String> = exec("$adb connect $host")
 
+    override fun disconnect(name: String): Flow<String> = exec("$adb disconnect $name")
+
     override fun emu(kill: Boolean): Flow<String> = exec(
         command = buildString {
             append(adb)
@@ -80,7 +87,7 @@ class AdbProcessClient(private val adb: String) : AdbClient {
 
     @FlowPreview
     override fun execCommand(command: String): Flow<String> = flow {
-        val all = devices()
+        val all = clientTargetDevices()
             .filter { it.status == AdbDevice.Status.Device }
             .onEmpty {
                 error("no devices/emulators found")
@@ -90,4 +97,6 @@ class AdbProcessClient(private val adb: String) : AdbClient {
             }
         emitAll(all)
     }
+
+    private fun clientTargetDevices() = (adbDevice?.let { flowOf(it) } ?: devices())
 }

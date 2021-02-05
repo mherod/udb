@@ -12,8 +12,10 @@ interface AdbClient : ProcessExecutor {
     fun shell(): AdbShellClient
     fun uiautomator(): UiAutomatorClient
     fun connect(host: String): Flow<String>
+    fun disconnect(name: String): Flow<String>
     fun emu(kill: Boolean = false): Flow<String>
     fun input(): AdbInputClient
+    fun singleDeviceClient(target: AdbDevice): AdbClient
 }
 
 /*
@@ -111,3 +113,5 @@ app installation (see also `adb shell cmd package help`):
      '-k': keep the data and cache directories
 
  */
+
+fun AdbClient.disconnect(adbDevice: AdbDevice): Flow<String> = disconnect(adbDevice.name)

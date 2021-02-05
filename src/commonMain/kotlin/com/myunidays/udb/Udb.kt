@@ -1,7 +1,9 @@
 package com.myunidays.udb
 
 import com.myunidays.udb.adb.AdbClient
+import com.myunidays.udb.adb.disconnect
 import com.myunidays.udb.adb.model.AdbDevice
+import com.myunidays.udb.util.extractGroup
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
@@ -31,5 +33,38 @@ class Udb(
             .launchIn(this)
 
         adb.devices()
+    }
+
+    @FlowPreview
+    @ExperimentalCoroutinesApi
+    fun goWireless(): Flow<AdbDevice> {
+        return adb.devices()
+            .flatMapConcat { adbDevice ->
+                if (adbDevice.status == AdbDevice.Status.Offline) {
+                    adb.disconnect(adbDevice)
+                } else {
+                    flowOf(adbDevice)
+                }
+            }
+            .filterIsInstance<AdbDevice>()
+            .filterNot { adbDevice ->
+                // TODO this better
+                adbDevice.name.endsWith(":5555")
+            }
+            .flatMapConcat { adbDevice ->
+                val singleDeviceClient = adb.singleDeviceClient(target = adbDevice)
+                singleDeviceClient.execCommand("shell ip addr show wlan0")
+                    .mapNotNull { ipRaw ->
+                        "inet (\\S+)/.+ wlan0".toRegex()
+                            .extractGroup(ipRaw)
+                    }
+                    .flatMapConcat { host ->
+                        println("HOST $host")
+                        singleDeviceClient.execCommand("tcpip 5555").singleOrNull()
+                        adb.connect(host)
+                    }
+            }.flatMapLatest {
+                adb.devices()
+            }
     }
 }
