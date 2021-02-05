@@ -13,6 +13,7 @@ interface AdbClient : ProcessExecutor {
     fun uiautomator(): UiAutomatorClient
     fun connect(host: String): Flow<String>
     fun emu(kill: Boolean = false): Flow<String>
+    fun input(): AdbInputClient
 }
 
 /*

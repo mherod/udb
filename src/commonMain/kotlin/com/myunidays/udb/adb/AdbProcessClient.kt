@@ -76,6 +76,8 @@ class AdbProcessClient(private val adb: String) : AdbClient {
         }
     )
 
+    override fun input(): AdbInputClient = AdbInputProcessClient(adbClient = this)
+
     @FlowPreview
     override fun execCommand(command: String): Flow<String> = flow {
         val all = devices()
