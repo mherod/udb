@@ -60,6 +60,8 @@ class OpenSubcommand(
                                 adb.execCommand(
                                     command = buildString {
                                         append("shell")
+//                                        append(" run-as")
+//                                        append(" $packageName")
                                         append(" am")
                                         append(" start")
                                         append(" -n \"$activityPath\"")
