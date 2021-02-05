@@ -4,6 +4,7 @@ import com.myunidays.udb.adb.model.AdbDevice
 import com.myunidays.udb.adb.model.AdbLogcatLine
 import com.myunidays.udb.exec
 import com.myunidays.udb.runBlocking
+import com.myunidays.udb.util.extractGroup
 import com.myunidays.udb.util.matchByName
 import com.myunidays.udb.util.runOrNull
 import com.myunidays.udb.util.splitOnSpacing
@@ -85,6 +86,28 @@ data class AdbProcessClient(
 
     override fun input(): AdbInputClient = AdbInputProcessClient(adbClient = this)
 
+    override fun listPackages(): Flow<String> {
+        return devices().flatMapConcat { device ->
+            val singleDeviceClient = singleDeviceClient(device)
+            singleDeviceClient.execCommand("shell pm list packages")
+                .mapNotNull {
+                    "package:(.+)".toRegex().extractGroup(it)
+                }
+        }.sorted()
+    }
+
+    override fun listActivities(): Flow<String> {
+        return devices().flatMapConcat { device ->
+            val singleDeviceClient = singleDeviceClient(device)
+            singleDeviceClient.execCommand("shell pm list packages")
+                .mapNotNull { "package:(.+)".toRegex().extractGroup(it) }
+                .sorted()
+                .flatMapConcat { packageName ->
+                    singleDeviceClient.listActivities(packageName)
+                }
+        }
+    }
+
     @FlowPreview
     override fun execCommand(command: String): Flow<String> = flow {
         val all = clientTargetDevices()
@@ -99,4 +122,22 @@ data class AdbProcessClient(
     }
 
     private fun clientTargetDevices() = (adbDevice?.let { flowOf(it) } ?: devices())
+}
+
+inline fun <reified T : Comparable<T>> Flow<T>.sorted(): Flow<T> = flow {
+    toSet().distinct().sortedBy { it }.forEach { emit(it) }
+}
+
+fun AdbClient.listActivities(
+    packageName: String,
+): Flow<String> {
+    return execCommand("shell pm dump $packageName")
+        .filter { "Activity" in it }
+        .mapNotNull { s ->
+            val escapedPackage = packageName
+                .replace(".", "\\.")
+            "($escapedPackage/\\S+Activity)"
+                .toRegex()
+                .extractGroup(s)
+        }.sorted()
 }

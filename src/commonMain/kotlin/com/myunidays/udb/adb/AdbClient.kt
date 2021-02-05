@@ -15,6 +15,8 @@ interface AdbClient : ProcessExecutor {
     fun disconnect(name: String): Flow<String>
     fun emu(kill: Boolean = false): Flow<String>
     fun input(): AdbInputClient
+    fun listPackages(): Flow<String>
+    fun listActivities(): Flow<String>
     fun singleDeviceClient(target: AdbDevice): AdbClient
 }
 

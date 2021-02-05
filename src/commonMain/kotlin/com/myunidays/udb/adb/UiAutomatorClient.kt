@@ -23,6 +23,15 @@ fun UiAutomatorClient.stream(): Flow<String> {
     }.distinctUntilChanged().conflate()
 }
 
+inline fun <reified T> Flow<T>.stream(): Flow<T> {
+    return flow {
+        while (currentCoroutineContext().isActive) {
+            emitAll(this@stream)
+            delay(100)
+        }
+    }.distinctUntilChanged().conflate()
+}
+
 @FlowPreview
 fun UiAutomatorClient.uiNodes(): Flow<IUiNode> {
     return dump()

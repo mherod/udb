@@ -2,11 +2,16 @@ package com.myunidays.udb.cli
 
 import com.myunidays.udb.Container
 import com.myunidays.udb.adb.AdbClient
+import com.myunidays.udb.adb.listActivities
 import com.myunidays.udb.runBlocking
 import kotlinx.cli.ArgType
 import kotlinx.cli.ExperimentalCli
 import kotlinx.cli.Subcommand
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.flatMapConcat
 
 @ExperimentalCli
 class OpenSubcommand(
@@ -20,23 +25,51 @@ class OpenSubcommand(
         fullName = "path"
     )
 
+    @ExperimentalCoroutinesApi
+    @FlowPreview
     override fun execute() = runBlocking {
         when {
             path.matches("http.+".toRegex()) -> {
-                adb.execCommand(buildString {
-                    append("shell")
-                    append(" am")
-                    append(" start")
-                    append(" -a android.intent.action.VIEW")
-                    append(" -d $path")
-                }).collect { s ->
+                adb.execCommand(
+                    command = buildString {
+                        append("shell")
+                        append(" am")
+                        append(" start")
+                        append(" -a android.intent.action.VIEW")
+                        append(" -d $path")
+                    }
+                ).collect { s ->
                     println(s)
                 }
             }
             else -> {
-//                adb.execCommand("adb shell am start -n \"com.myunidays.dev/com.myunidays.san.onboarding.OnboardingPartnerSelectionActivity\" -a android.intent.action.MAIN").collect { s ->
-//                    println(s)
-//                }
+                adb.listPackages()
+                    .filter { it in path }
+                    .flatMapConcat { packageName ->
+                        val searchParts = path
+                            .split("\\W".toRegex())
+                            .filterNot { it.isBlank() }
+                        adb.listActivities(packageName)
+                            .filter { activity ->
+                                searchParts.all {
+                                    activity.contains(it, ignoreCase = true)
+                                }
+                            }
+                            .flatMapConcat { activityPath ->
+                                println(activityPath)
+                                adb.execCommand(
+                                    command = buildString {
+                                        append("shell")
+                                        append(" am")
+                                        append(" start")
+                                        append(" -n \"$activityPath\"")
+                                    }
+                                )
+                            }
+                    }
+                    .collect { s ->
+                        println(s)
+                    }
             }
         }
     }

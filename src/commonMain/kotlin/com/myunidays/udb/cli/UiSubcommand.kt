@@ -12,10 +12,7 @@ import kotlinx.cli.ArgType
 import kotlinx.cli.Subcommand
 import kotlinx.cli.default
 import kotlinx.coroutines.FlowPreview
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.filter
-import kotlinx.coroutines.flow.filterNot
-import kotlinx.coroutines.flow.flatMapMerge
+import kotlinx.coroutines.flow.*
 
 class UiSubcommand(
     private val adb: AdbClient = Container.adbClient(),
@@ -24,6 +21,10 @@ class UiSubcommand(
     actionDescription = "Extract and automate UI"
 ) {
     private val watch: Boolean by option(
+        type = ArgType.Boolean
+    ).default(false)
+
+    private val packages: Boolean by option(
         type = ArgType.Boolean
     ).default(false)
 
@@ -43,6 +44,13 @@ class UiSubcommand(
     override fun execute() = runBlocking {
         adb.uiautomator().run {
             when {
+                packages -> {
+                    uiNodes()
+                        .mapNotNull { it.pkg }
+                        .filterNot { it.isBlank() }
+                        .toSet()
+                        .forEach { println(it) }
+                }
                 watch -> {
                     stream().changes().collect { (from, to) ->
                         val commonPrefix = from.commonPrefixWith(to)
