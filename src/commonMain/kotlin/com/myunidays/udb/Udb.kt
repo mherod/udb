@@ -41,12 +41,14 @@ class Udb(
         return adb.devices()
             .flatMapConcat { adbDevice ->
                 if (adbDevice.status == AdbDevice.Status.Offline) {
-                    adb.disconnect(adbDevice)
-                } else {
-                    flowOf(adbDevice)
+                    adb.disconnect(adbDevice).singleOrNull()
                 }
+                flowOf(adbDevice)
             }
             .filterIsInstance<AdbDevice>()
+            .filterNot { adbDevice ->
+                adbDevice.status == AdbDevice.Status.Offline
+            }
             .filterNot { adbDevice ->
                 // TODO this better
                 adbDevice.name.endsWith(":5555")
@@ -59,7 +61,6 @@ class Udb(
                             .extractGroup(ipRaw)
                     }
                     .flatMapConcat { host ->
-                        println("HOST $host")
                         singleDeviceClient.execCommand("tcpip 5555").singleOrNull()
                         adb.connect(host)
                     }
