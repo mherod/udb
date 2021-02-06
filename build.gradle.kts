@@ -149,3 +149,12 @@ task<JavaExec>("run") {
     val runtimeDependencies = (main as KotlinCompilationToRunnableFiles<KotlinCommonOptions>).runtimeDependencyFiles
     classpath = files(main.output.allOutputs, runtimeDependencies)
 }
+
+tasks.withType<Test> {
+    testLogging {
+        showCauses = true
+        showExceptions = true
+        showStackTraces = true
+        showStandardStreams = true
+    }
+}
