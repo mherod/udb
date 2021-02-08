@@ -16,6 +16,27 @@ data class AdbProcessClient(
     private val adbDevice: AdbDevice? = null,
 ) : AdbClient {
 
+    private var serverProcessId: Int? = null
+
+    init {
+        runBlocking { startServer() }
+    }
+
+    override fun startServer(restart: Boolean) = runBlocking {
+        if (restart) {
+            exec("adb kill-server").launchIn(this)
+            adbDaemonPid()?.let { pid ->
+                exec("kill $pid").launchIn(this)
+            }
+        }
+        exec("adb start-server").launchIn(this)
+        serverProcessId = adbDaemonPid()
+    }
+
+    private suspend fun adbDaemonPid(): Int? = pgrepAdb().singleOrNull()?.toIntOrNull()
+
+    private fun pgrepAdb(): Flow<String> = exec("pgrep adb")
+
     override fun version(): String = runBlocking {
         exec("$adb --version")
             .map { "\\S*\\d+\\S*".toRegex().find(it)?.value ?: it }

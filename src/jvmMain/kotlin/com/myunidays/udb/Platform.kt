@@ -4,7 +4,6 @@ package com.myunidays.udb
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.asFlow
 import kotlin.system.exitProcess
 
 actual inline fun mainBlock(crossinline block: suspend CoroutineScope.() -> Unit) {
@@ -22,12 +21,8 @@ actual inline fun mainBlock(crossinline block: suspend CoroutineScope.() -> Unit
 }
 
 actual fun exec(command: String): Flow<String> {
-    return Runtime.getRuntime()
-        .exec(command)
-        .inputStream
-        .bufferedReader()
-        .lineSequence()
-        .asFlow()
+    println(command)
+    return Runtime.getRuntime().exec(command).mergedInputStreamFlow()
 }
 
 actual fun envVar(key: String): String? = System.getenv(key)?.takeUnless { it.isBlank() }

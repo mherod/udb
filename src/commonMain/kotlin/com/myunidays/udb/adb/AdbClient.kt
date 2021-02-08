@@ -18,6 +18,7 @@ interface AdbClient : ProcessExecutor {
     fun listPackages(): Flow<String>
     fun listActivities(): Flow<String>
     fun singleDeviceClient(target: AdbDevice): AdbClient
+    fun startServer(restart: Boolean = false)
 }
 
 /*

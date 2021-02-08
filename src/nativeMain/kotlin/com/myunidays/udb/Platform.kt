@@ -9,7 +9,6 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.runBlocking
 import platform.posix.*
-import kotlin.text.toBoolean
 
 val debugLogsEnabled: Boolean by lazy(getenv("DEBUG")?.toKString()::toBoolean)
 
