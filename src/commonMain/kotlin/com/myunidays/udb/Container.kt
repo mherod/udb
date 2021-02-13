@@ -15,6 +15,7 @@ object Container : Injectable {
 
     private val udb: Udb = Udb(
         adb = adbClient,
+        emulator = emulator,
         arp = arpClient
     )
 

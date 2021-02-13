@@ -35,6 +35,13 @@ inline fun <reified T> Flow<T>.stream(): Flow<T> {
 @FlowPreview
 fun UiAutomatorClient.uiNodes(): Flow<IUiNode> {
     return dump()
+        .onEmpty {
+            error("dump was empty")
+        }
+        .retryWhen { _, _ ->
+            delay(1_000)
+            true
+        }
         .flatMapConcat {
             "<[^>]+>".toRegex()
                 .findAll(it)

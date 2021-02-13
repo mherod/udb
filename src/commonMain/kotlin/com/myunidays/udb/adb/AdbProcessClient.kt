@@ -133,16 +133,22 @@ data class AdbProcessClient(
     override fun execCommand(command: String): Flow<String> = flow {
         val all = clientTargetDevices()
             .filter { it.status == AdbDevice.Status.Device }
-            .onEmpty {
-                error("no devices/emulators found")
-            }
             .flatMapMerge { device ->
                 exec("$adb -s ${device.name} $command")
             }
         emitAll(all)
     }
 
-    private fun clientTargetDevices() = (adbDevice?.let { flowOf(it) } ?: devices())
+    private fun clientTargetDevices(): Flow<AdbDevice> {
+        return flow {
+            adbDevice?.let { device ->
+                exec("$adb -s ${device.name} wait-for-device")
+                emit(device)
+            }
+        }.onEmpty {
+            emitAll(flow = devices())
+        }
+    }
 }
 
 inline fun <reified T : Comparable<T>> Flow<T>.sorted(): Flow<T> = flow {

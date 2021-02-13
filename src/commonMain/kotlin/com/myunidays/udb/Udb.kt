@@ -1,20 +1,20 @@
 package com.myunidays.udb
 
 import com.myunidays.udb.adb.AdbClient
+import com.myunidays.udb.adb.EmulatorClient
 import com.myunidays.udb.adb.disconnect
 import com.myunidays.udb.adb.model.AdbDevice
 import com.myunidays.udb.networking.ArpClient
 import com.myunidays.udb.util.extractGroup
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.FlowPreview
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.delay
+import com.myunidays.udb.util.launchBlocking
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import kotlin.time.ExperimentalTime
 import kotlin.time.seconds
 
 class Udb(
     private val adb: AdbClient,
+    private val emulator: EmulatorClient,
     private val arp: ArpClient,
 ) {
     fun listDevices(): Flow<AdbDevice> = adb.devices()
@@ -23,12 +23,12 @@ class Udb(
     @FlowPreview
     @ExperimentalCoroutinesApi
     fun discoverAndConnect(): Flow<AdbDevice> = flow {
-        merge(
-            bonjourHosts(),
-            networkHosts()
-        ).flatMapMerge { host ->
+        discoverHosts().flatMapMerge(concurrency = 16) { host ->
             flow {
-                adb.connect(host).launchIn(GlobalScope)
+                supervisorScope {
+                    adb.connect(host)
+                        .launchIn(this)
+                }
                 delay(5_000)
                 emit(0)
             }
@@ -37,6 +37,11 @@ class Udb(
         }.toList()
         emitAll(adb.devices())
     }
+
+    private fun discoverHosts() = merge(
+        bonjourHosts(),
+        networkHosts()
+    )
 
     private fun killLongProcesses(): Flow<String> {
         return exec("pgrep adb")
@@ -89,6 +94,44 @@ class Udb(
             }.flatMapLatest {
                 adb.devices()
             }
+    }
+
+    fun setupEmulator(
+        wait: Boolean = false,
+        quiet: Boolean = false,
+    ) {
+        val beforeDevices: List<AdbDevice> = runBlocking {
+            adb.devices().toList()
+        }
+
+        emulator.listAvds()
+            .flatMapConcat { avdName ->
+                emulator.launch(
+                    avd = avdName,
+                    quiet = quiet,
+                )
+            }.launchIn(GlobalScope)
+
+        if (wait) runBlocking {
+            println("Waiting for device connection")
+            while (adb.devices().count { it !in beforeDevices } == 0) {
+                delay(800)
+            }
+        }
+    }
+
+    fun tearDownEmulator(wait: Boolean = false) {
+
+        adb.emu(kill = true).launchBlocking()
+
+        if (wait) runBlocking {
+            println("Waiting for device disconnection")
+            waitForDeviceDisconnection()
+        }
+    }
+
+    private suspend fun waitForDeviceDisconnection() {
+        while (adb.devices().count() > 0) delay(800)
     }
 }
 

@@ -4,10 +4,13 @@ package com.myunidays.udb
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.asFlow
+import kotlinx.coroutines.runBlocking
+import java.io.File
 import kotlin.system.exitProcess
 
 actual inline fun mainBlock(crossinline block: suspend CoroutineScope.() -> Unit) {
-    kotlinx.coroutines.runBlocking {
+    runBlocking {
         runCatching { block() }
             .onFailure { throwable ->
                 val message = throwable.message ?: throwable.cause?.message
@@ -21,8 +24,16 @@ actual inline fun mainBlock(crossinline block: suspend CoroutineScope.() -> Unit
 }
 
 actual fun exec(command: String): Flow<String> {
-    println(command)
+//    println(command)
     return Runtime.getRuntime().exec(command).mergedInputStreamFlow()
 }
 
 actual fun envVar(key: String): String? = System.getenv(key)?.takeUnless { it.isBlank() }
+
+actual fun findFile(searchPath: String, fileName: String): Flow<String> {
+    return File(searchPath)
+        .walkTopDown()
+        .filter { it.isFile && it.name == fileName }
+        .map { it.absolutePath }
+        .asFlow()
+}

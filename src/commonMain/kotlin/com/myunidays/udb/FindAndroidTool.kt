@@ -1,5 +1,6 @@
 package com.myunidays.udb
 
+import kotlinx.coroutines.flow.onEmpty
 import kotlinx.coroutines.flow.reduce
 import kotlinx.coroutines.flow.singleOrNull
 
@@ -16,9 +17,12 @@ fun findAndroidTool(tool: String): String = runBlocking {
         "emulator" -> "$androidHome/emulator"
         else -> androidHome
     }
-    return@runBlocking exec(
-        command = "find \"$searchPath\" -type f -name \"$tool\""
-    ).reduce { accumulator, value ->
+    return@runBlocking findFile(
+        searchPath = searchPath,
+        fileName = tool
+    ).onEmpty {
+        error("couldn't find $tool. Check it is installed in your Android SDK")
+    }.reduce { accumulator, value ->
         when {
             value.length < accumulator.length -> value
             else -> accumulator

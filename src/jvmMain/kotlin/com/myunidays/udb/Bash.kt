@@ -12,10 +12,7 @@ actual fun bash(command: String): Flow<String> = flow {
         }
         .replace("\n".toRegex()) { "; " }
         .replace("\"".toRegex()) { "\\\"" }
-        .let { line ->
-            "\"${line.trim()}\""
-        }
-    println("!! $escaped")
+        .trim()
     val output = ProcessBuilder()
         .command("bash", "-c", escaped)
         .start()

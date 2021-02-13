@@ -4,6 +4,8 @@ import com.myunidays.udb.Container
 import com.myunidays.udb.adb.AdbClient
 import com.myunidays.udb.adb.EmulatorClient
 import com.myunidays.udb.runBlocking
+import com.myunidays.udb.util.launchBlocking
+import com.myunidays.udb.util.maybeTimeout
 import kotlinx.cli.ArgType
 import kotlinx.cli.ExperimentalCli
 import kotlinx.cli.Subcommand
@@ -11,7 +13,8 @@ import kotlinx.cli.default
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.flatMapConcat
-import kotlinx.coroutines.flow.launchIn
+import kotlin.time.ExperimentalTime
+import kotlin.time.seconds
 
 @ExperimentalCli
 class EmulatorSubcommand(
@@ -49,6 +52,14 @@ class EmulatorSubcommand(
         description = "List avds to launch",
     ).default(false)
 
+    private val timeout: Int? by option(
+        type = ArgType.Int,
+        fullName = "timeout",
+        shortName = "t",
+        description = "Kill emulator after x seconds"
+    )
+
+    @OptIn(ExperimentalTime::class)
     @FlowPreview
     override fun execute() = runBlocking {
 
@@ -65,13 +76,15 @@ class EmulatorSubcommand(
         }
 
         if (start) {
-            emulatorClient.listAvds()
-                .flatMapConcat { avdName ->
-                    emulatorClient.launch(
-                        avd = avdName,
-                        quiet = silent,
-                    )
-                }.launchIn(this)
+            maybeTimeout(timeout?.seconds) {
+                emulatorClient.listAvds()
+                    .flatMapConcat { avdName ->
+                        emulatorClient.launch(
+                            avd = avdName,
+                            quiet = silent,
+                        )
+                    }.launchBlocking()
+            }
         }
     }
 }

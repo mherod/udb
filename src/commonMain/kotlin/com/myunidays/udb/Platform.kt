@@ -10,3 +10,5 @@ expect inline fun <T : Any> runBlocking(noinline block: suspend CoroutineScope.(
 expect fun exec(command: String): Flow<String>
 
 expect fun envVar(key: String): String?
+
+expect fun findFile(searchPath: String, fileName: String): Flow<String>

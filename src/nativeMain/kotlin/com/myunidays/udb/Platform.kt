@@ -6,6 +6,7 @@ import kotlinx.cinterop.memScoped
 import kotlinx.cinterop.toKString
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.runBlocking
 import platform.posix.*
@@ -42,3 +43,11 @@ actual fun exec(command: String): Flow<String> = flow {
 }
 
 actual fun envVar(key: String): String? = getenv(key)?.toKString()?.takeUnless { it.isBlank() }
+
+actual fun findFile(searchPath: String, fileName: String): Flow<String> {
+    return exec(
+        command = "find \"$searchPath\" -type f -name \"$fileName\""
+    ).filter { output ->
+        output.endsWith(fileName)
+    }
+}

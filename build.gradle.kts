@@ -70,6 +70,7 @@ kotlin {
             dependencies {
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion")
                 implementation("org.jetbrains.kotlinx:kotlinx-cli:0.3")
+                implementation("com.autodesk:coroutineworker:0.6.2")
             }
         }
         val nativeMain by getting {

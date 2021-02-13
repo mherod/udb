@@ -6,7 +6,6 @@ import kotlinx.coroutines.flow.flow
 
 actual fun bash(command: String): Flow<String> = flow {
     val bashCommand = "bash -c \"$command\""
-    println("BASH: $bashCommand")
     val bash = exec(bashCommand)
     emitAll(bash)
 }

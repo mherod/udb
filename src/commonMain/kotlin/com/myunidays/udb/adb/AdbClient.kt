@@ -4,6 +4,9 @@ import com.myunidays.udb.ProcessExecutor
 import com.myunidays.udb.adb.model.AdbDevice
 import com.myunidays.udb.adb.model.AdbLogcatLine
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.flatMapConcat
 
 interface AdbClient : ProcessExecutor {
     fun version(): String
@@ -118,3 +121,52 @@ app installation (see also `adb shell cmd package help`):
  */
 
 fun AdbClient.disconnect(adbDevice: AdbDevice): Flow<String> = disconnect(adbDevice.name)
+
+suspend fun AdbClient.open(path: String) {
+    when {
+        path.matches("http.+".toRegex()) -> {
+            execCommand(
+                command = buildString {
+                    append("shell")
+                    append(" am")
+                    append(" start")
+                    append(" -a android.intent.action.VIEW")
+                    append(" -d $path")
+                }
+            ).collect { s ->
+                println(s)
+            }
+        }
+        else -> {
+            listPackages()
+                .filter { it in path }
+                .flatMapConcat { packageName ->
+                    val searchParts = path
+                        .split("\\W".toRegex())
+                        .filterNot { it.isBlank() }
+                    listActivities(packageName)
+                        .filter { activity ->
+                            searchParts.all {
+                                activity.contains(it, ignoreCase = true)
+                            }
+                        }
+                        .flatMapConcat { activityPath ->
+                            println(activityPath)
+                            execCommand(
+                                command = buildString {
+                                    append("shell")
+//                                        append(" run-as")
+//                                        append(" $packageName")
+                                    append(" am")
+                                    append(" start")
+                                    append(" -n \"$activityPath\"")
+                                }
+                            )
+                        }
+                }
+                .collect { s ->
+                    println(s)
+                }
+        }
+    }
+}

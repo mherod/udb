@@ -1,5 +1,6 @@
 package com.myunidays.udb.adb
 
+import com.myunidays.udb.util.extractGroup
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.*
 
@@ -7,25 +8,29 @@ class UiAutomatorProcessClient(private val adbClient: AdbClient) : UiAutomatorCl
 
     @FlowPreview
     override fun dump(): Flow<String> = flow {
-        val dump = with(adbClient) {
-            execCommand("exec-out uiautomator dump /dev/tty")
+
+        val joinedRaw = with(adbClient) {
+            emptyFlow<String>()
+//            execCommand("exec-out uiautomator dump /dev/tty")
                 .onEmpty {
                     val fallback =
                         execCommand("shell uiautomator dump")
                             .flatMapConcat {
-                                execCommand("pull /sdcard/window_dump.xml")
-                                    .flatMapConcat {
-                                        execCommand("shell cat window_dump.xml")
-                                    }
+                                val fileName = "(\\S+\\.xml)".toRegex().extractGroup(it)
+                                execCommand("shell cat $fileName")
                             }
                     emitAll(fallback)
                 }
                 .filterNot { it.startsWith("ERROR:", ignoreCase = true) }
-        }.toList()
-            .joinToString("")
+        }.toList().joinToString("")
+
+        require(joinedRaw.isNotBlank())
+
+        val dump = joinedRaw
             .substringAfter('<')
             .substringBeforeLast('>')
             .let { "<$it>" }
+
         emit(dump)
     }
 }
