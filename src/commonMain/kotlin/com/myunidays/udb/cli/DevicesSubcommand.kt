@@ -43,8 +43,8 @@ class DevicesSubcommand(
                 }
             }
             else -> {
-                udb.listDevices().collect {
-                    println(it)
+                udb.listDevices().collect { adbDevice ->
+                    println(adbDevice)
                 }
             }
         }

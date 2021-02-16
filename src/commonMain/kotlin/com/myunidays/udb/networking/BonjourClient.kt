@@ -1,3 +1,7 @@
 package com.myunidays.udb.networking
 
-interface BonjourClient
+import kotlinx.coroutines.flow.Flow
+
+interface BonjourClient {
+    fun queryServiceHosts(type: String): Flow<String>
+}

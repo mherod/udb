@@ -2,11 +2,12 @@ package com.myunidays.udb
 
 import com.myunidays.udb.adb.AdbClient
 import com.myunidays.udb.adb.EmulatorClient
-import com.myunidays.udb.adb.disconnect
 import com.myunidays.udb.adb.model.AdbDevice
+import com.myunidays.udb.adb.model.AdbDevice.ConnectionType.Emulator
+import com.myunidays.udb.adb.model.AdbDevice.ConnectionType.USB
 import com.myunidays.udb.networking.ArpClient
-import com.myunidays.udb.util.extractGroup
-import com.myunidays.udb.util.launchBlocking
+import com.myunidays.udb.networking.BonjourClient
+import com.myunidays.udb.util.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import kotlin.time.ExperimentalTime
@@ -16,18 +17,19 @@ class Udb(
     private val adb: AdbClient,
     private val emulator: EmulatorClient,
     private val arp: ArpClient,
+    private val bonjour: BonjourClient,
 ) {
+
     fun listDevices(): Flow<AdbDevice> = adb.devices()
 
     @OptIn(ExperimentalTime::class)
     @FlowPreview
     @ExperimentalCoroutinesApi
     fun discoverAndConnect(): Flow<AdbDevice> = flow {
-        discoverHosts().flatMapMerge(concurrency = 16) { host ->
+        discoverHosts().flatMapMerge { host ->
             flow {
                 supervisorScope {
-                    adb.connect(host)
-                        .launchIn(this)
+                    adb.connect(host).launchIn(this)
                 }
                 delay(5_000)
                 emit(0)
@@ -38,57 +40,39 @@ class Udb(
         emitAll(adb.devices())
     }
 
-    private fun discoverHosts() = merge(
-        bonjourHosts(),
-        networkHosts()
+    private fun discoverHosts(): Flow<String> = merge(
+        networkHosts(),
+        bonjourHosts()
     )
 
     private fun killLongProcesses(): Flow<String> {
-        return exec("pgrep adb")
+        return pgrep("adb")
             .drop(1) // first is likely to be the server!!
-            .flatMapMerge { exec("kill $it") }
+            .flatMapMerge { kill(it) }
     }
 
-    private fun networkHosts() = arp.list().map { it.address }
+    private fun networkHosts(): Flow<String> = arp.list().map { it.address }
 
-    private fun bonjourHosts(): Flow<String> {
-        return bash("dns-sd -B _adb._tcp. & sleep 1 && pgrep dns-sd | xargs kill -13")
-            .mapNotNull {
-                "adb-\\S+".toRegex().find(it)?.value
-            }.flatMapConcat { instanceName ->
-                bash("dns-sd -L \"$instanceName\" _adb._tcp. & sleep 5 && pgrep dns-sd | xargs kill -13")
-            }.mapNotNull {
-                "can be reached at (\\S+)".toRegex().find(it)?.groupValues?.lastOrNull()
-            }
-    }
+    private fun bonjourHosts(): Flow<String> = bonjour.queryServiceHosts("_adb._tcp.")
 
     @FlowPreview
     @ExperimentalCoroutinesApi
     fun goWireless(): Flow<AdbDevice> {
         return adb.devices()
-            .flatMapConcat { adbDevice ->
-                if (adbDevice.status == AdbDevice.Status.Offline) {
-                    adb.disconnect(adbDevice).singleOrNull()
-                }
-                flowOf(adbDevice)
-            }
+            .flatMapConcat { adb.refreshState(it) }
             .filterIsInstance<AdbDevice>()
-            .filterNot { adbDevice ->
-                adbDevice.status == AdbDevice.Status.Offline
-            }
-            .filterNot { adbDevice ->
-                // TODO this better
-                adbDevice.name.endsWith(":5555")
-            }
+            .filterNot { it.status == AdbDevice.Status.Offline }
+            .filter { it.connectionType == USB }
             .flatMapConcat { adbDevice ->
                 val singleDeviceClient = adb.singleDeviceClient(target = adbDevice)
                 singleDeviceClient.execCommand("shell ip addr show wlan0")
                     .mapNotNull { ipRaw ->
-                        "inet (\\S+)/.+ wlan0".toRegex()
-                            .extractGroup(ipRaw)
+                        "inet (\\S+)/.+ wlan0".toRegex().extractGroup(ipRaw)
+                    }
+                    .onEach {
+                        singleDeviceClient.execCommand("tcpip 5555").launchBlocking()
                     }
                     .flatMapConcat { host ->
-                        singleDeviceClient.execCommand("tcpip 5555").singleOrNull()
                         adb.connect(host)
                     }
             }.flatMapLatest {
@@ -125,18 +109,10 @@ class Udb(
         adb.emu(kill = true).launchBlocking()
 
         if (wait) runBlocking {
-            println("Waiting for device disconnection")
-            waitForDeviceDisconnection()
+            println("Waiting for emulator disconnection")
+            while (adb.devices().any { it.connectionType == Emulator }) {
+                delay(800)
+            }
         }
     }
-
-    private suspend fun waitForDeviceDisconnection() {
-        while (adb.devices().count() > 0) delay(800)
-    }
 }
-
-//                bash(
-//                    command = list.joinToString(separator = " ; ", postfix = " ; wait") {
-//                        "nohup adb connect $it & sleep 5 && pgrep adb | xargs kill -13"
-//                    }
-//                ).toList()

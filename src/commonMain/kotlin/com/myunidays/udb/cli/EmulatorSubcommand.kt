@@ -5,7 +5,6 @@ import com.myunidays.udb.adb.AdbClient
 import com.myunidays.udb.adb.EmulatorClient
 import com.myunidays.udb.runBlocking
 import com.myunidays.udb.util.launchBlocking
-import com.myunidays.udb.util.maybeTimeout
 import kotlinx.cli.ArgType
 import kotlinx.cli.ExperimentalCli
 import kotlinx.cli.Subcommand
@@ -14,7 +13,6 @@ import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.flatMapConcat
 import kotlin.time.ExperimentalTime
-import kotlin.time.seconds
 
 @ExperimentalCli
 class EmulatorSubcommand(
@@ -76,15 +74,13 @@ class EmulatorSubcommand(
         }
 
         if (start) {
-            maybeTimeout(timeout?.seconds) {
-                emulatorClient.listAvds()
-                    .flatMapConcat { avdName ->
-                        emulatorClient.launch(
-                            avd = avdName,
-                            quiet = silent,
-                        )
-                    }.launchBlocking()
-            }
+            emulatorClient.listAvds()
+                .flatMapConcat { avdName ->
+                    emulatorClient.launch(
+                        avd = avdName,
+                        quiet = silent,
+                    )
+                }.launchBlocking()
         }
     }
 }

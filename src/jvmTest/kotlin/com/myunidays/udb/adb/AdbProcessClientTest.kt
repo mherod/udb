@@ -18,7 +18,7 @@ import kotlin.test.assertTrue
 class AdbProcessClientTest {
 
     @get:Rule
-    val timeout: TestRule = Timeout.seconds(30)
+    val timeout: TestRule = Timeout.seconds(90)
 
     private val udb: Udb by Container
 

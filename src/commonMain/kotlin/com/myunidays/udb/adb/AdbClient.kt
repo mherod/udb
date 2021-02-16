@@ -10,18 +10,34 @@ import kotlinx.coroutines.flow.flatMapConcat
 
 interface AdbClient : ProcessExecutor {
     fun version(): String
+
     fun devices(): Flow<AdbDevice>
+
     fun logs(): Flow<AdbLogcatLine>
+
     fun shell(): AdbShellClient
+
     fun uiautomator(): UiAutomatorClient
-    fun connect(host: String): Flow<String>
-    fun disconnect(name: String): Flow<String>
-    fun emu(kill: Boolean = false): Flow<String>
+
     fun input(): AdbInputClient
+
+    fun connect(host: String): Flow<AdbDeviceConnectionResult>
+
+    fun disconnect(name: String): Flow<String>
+
+    fun emu(kill: Boolean = false): Flow<String>
+
     fun listPackages(): Flow<String>
+
     fun listActivities(): Flow<String>
+
     fun singleDeviceClient(target: AdbDevice): AdbClient
+
     fun startServer(restart: Boolean = false)
+
+    fun refreshState(adbDevice: AdbDevice): Flow<AdbDevice>
+
+    fun service(serviceName: String, enable: Boolean = true): Flow<String>
 }
 
 /*

@@ -4,6 +4,8 @@ import com.myunidays.udb.adb.AdbClient
 import com.myunidays.udb.adb.EmulatorClient
 import com.myunidays.udb.networking.ArpClient
 import com.myunidays.udb.networking.ArpProcessClient
+import com.myunidays.udb.networking.BonjourClient
+import com.myunidays.udb.networking.BonjourProcessClient
 
 object Container : Injectable {
 
@@ -13,10 +15,13 @@ object Container : Injectable {
 
     private val arpClient: ArpClient by lazy(::ArpProcessClient)
 
+    private val bonjourClient: BonjourClient by lazy(::BonjourProcessClient)
+
     private val udb: Udb = Udb(
         adb = adbClient,
         emulator = emulator,
-        arp = arpClient
+        arp = arpClient,
+        bonjour = bonjourClient
     )
 
     override fun udb(): Udb = udb
