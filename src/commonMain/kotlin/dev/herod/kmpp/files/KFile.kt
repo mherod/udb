@@ -13,4 +13,4 @@ interface KFile {
     fun readLines(): Flow<String>
 }
 
-expect fun file(absolutePath: String) : KFile
+expect fun file(absolutePath: String): KFile

@@ -4,7 +4,6 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.merge
-import kotlinx.coroutines.flow.onEach
 
 @ExperimentalCoroutinesApi
 fun Process.mergedInputStreamFlow(): Flow<String> {

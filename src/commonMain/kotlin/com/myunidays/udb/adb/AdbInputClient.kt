@@ -12,8 +12,10 @@ interface AdbInputClient {
 
 fun AdbInputClient.tap(node: IUiNode): Flow<String> = flow {
     val bounds = node.bounds
-    emitAll(flow = tap(
-        x = bounds.centreX,
-        y = bounds.centreY
-    ))
+    emitAll(
+        flow = tap(
+            x = bounds.centreX,
+            y = bounds.centreY
+        )
+    )
 }

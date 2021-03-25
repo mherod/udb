@@ -1,7 +1,5 @@
 package com.myunidays.udb
 
-import kotlinx.coroutines.flow.onEmpty
-import kotlinx.coroutines.flow.reduce
 import kotlinx.coroutines.flow.singleOrNull
 
 fun findAndroidTool(tool: String): String = runBlocking {

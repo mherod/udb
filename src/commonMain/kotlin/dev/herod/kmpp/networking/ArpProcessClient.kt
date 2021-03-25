@@ -27,6 +27,7 @@ class ArpProcessClient : ArpClient {
                             netInterface = requireNotNull(netInterface)
                         )
                     }
-                })
+                }
+        )
     }
 }

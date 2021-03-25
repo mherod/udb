@@ -6,6 +6,5 @@ class UiAutomatorProcessClientTest {
 
     @Test
     fun check() {
-
     }
 }

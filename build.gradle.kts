@@ -170,3 +170,51 @@ task<JavaExec>("runUdbNetworkScan") {
     val runtimeDependencies = (main as KotlinCompilationToRunnableFiles<KotlinCommonOptions>).runtimeDependencyFiles
     classpath = files(main.output.allOutputs, runtimeDependencies)
 }
+
+configurations {
+    create("ktlint")
+}
+
+dependencies {
+    "ktlint"("com.pinterest:ktlint:0.40.0")
+}
+
+val disabledKtlintRules = "" +
+        "import-ordering," +
+        "max-line-length," +
+        "final-newline," +
+        "no-wildcard-imports"
+
+val ktlint = task<JavaExec>("ktlint") {
+    group = "verification"
+    description = "Check Kotlin code style."
+    inputs.files(kotlinSourceFileTree())
+    outputs.files(kotlinSourceFileTree())
+    outputs.files(file("build/outputs/ktlint-report-in-checkstyle-format.xml"))
+    classpath = configurations.getAt("ktlint")
+    main = "com.pinterest.ktlint.Main"
+    args = listOf(
+        "src/**/*.kt",
+        "--disabled_rules=${disabledKtlintRules}",
+        "--verbose",
+        "--reporter=plain",
+        "--reporter=checkstyle,output=build/outputs/ktlint-report-in-checkstyle-format.xml"
+    )
+}
+
+task<JavaExec>("ktlintFormat") {
+    group = "formatting"
+    description = "Fix Kotlin code style deviations."
+    inputs.files(kotlinSourceFileTree())
+    outputs.files(kotlinSourceFileTree())
+    classpath = configurations.getAt("ktlint")
+    main = "com.pinterest.ktlint.Main"
+    args = listOf(
+        "-F",
+        "src/**/*.kt",
+        "--disabled_rules=${disabledKtlintRules}",
+        "--verbose"
+    )
+}
+
+fun kotlinSourceFileTree(): ConfigurableFileTree = fileTree("src/") { include("**/*.kt") }
