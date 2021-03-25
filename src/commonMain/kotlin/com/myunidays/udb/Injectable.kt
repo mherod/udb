@@ -2,7 +2,8 @@ package com.myunidays.udb
 
 import com.myunidays.udb.adb.AdbClient
 import com.myunidays.udb.adb.EmulatorClient
-import com.myunidays.udb.networking.ArpClient
+import dev.herod.kmpp.networking.ArpClient
+
 
 interface Injectable {
     fun udb(): Udb

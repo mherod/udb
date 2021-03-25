@@ -1,7 +1,7 @@
 package com.myunidays.udb.adb
 
 import com.myunidays.udb.ProcessExecutor
-import com.myunidays.udb.networking.NetworkSetupClient
+import dev.herod.kmpp.networking.NetworkSetupClient
 import kotlinx.coroutines.flow.*
 
 class EmulatorProcessClient(

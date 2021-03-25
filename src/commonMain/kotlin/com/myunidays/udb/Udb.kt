@@ -6,14 +6,13 @@ import com.myunidays.udb.adb.model.AdbDevice
 import com.myunidays.udb.util.*
 import dev.herod.kmpp.networking.ArpClient
 import dev.herod.kmpp.networking.BonjourClient
+import dev.herod.kx.flow.timeout
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import kotlin.time.ExperimentalTime
 
 class Udb(
     private val adb: AdbClient,
-    private val arpClient: ArpClient,
-    private val bonjourClient: BonjourClient
     private val emulator: EmulatorClient,
     private val arp: ArpClient,
     private val bonjour: BonjourClient,
@@ -26,20 +25,13 @@ class Udb(
     @ExperimentalCoroutinesApi
     fun discoverAndConnect(): Flow<AdbDevice> = flow {
 
-        bonjourClient.queryServiceHosts("_adb._tcp.")
-            .flatMapConcat { host: String ->
-                adb.connect(host)
-            }
-            .toList()
-
-        arpClient.list()
-            .flowOn(Dispatchers.Default)
-            .map { it.address }
+        discoverHosts()
             .flatMapMerge { host: String ->
                 adb.connect(host)
                     .flowOn(Dispatchers.Default)
-                    .timeout(5_000)
+                    .timeout(1_000)
             }
+            .timeout(5_000)
             .toList()
 
         emitAll(flow = adb.devices())
@@ -67,7 +59,7 @@ class Udb(
             .flatMapConcat { adb.refreshState(it) }
             .filterIsInstance<AdbDevice>()
             .filterNot { it.status == AdbDevice.Status.Offline }
-            .filter { it.connectionType == USB }
+            .filter { it.connectionType == AdbDevice.ConnectionType.USB }
             .flatMapConcat { adbDevice ->
                 val singleDeviceClient = adb.singleDeviceClient(target = adbDevice)
                 singleDeviceClient.execCommand("shell ip addr show wlan0")
@@ -115,7 +107,7 @@ class Udb(
 
         if (wait) runBlocking {
             println("Waiting for emulator disconnection")
-            while (adb.devices().any { it.connectionType == Emulator }) {
+            while (adb.devices().any { it.connectionType == AdbDevice.ConnectionType.Emulator }) {
                 delay(800)
             }
         }

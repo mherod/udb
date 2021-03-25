@@ -2,6 +2,7 @@ package com.myunidays.udb
 
 import com.myunidays.udb.adb.EmulatorClient
 import com.myunidays.udb.adb.EmulatorProcessClient
+import dev.herod.kmpp.networking.SystemNetworkSetupClient
 import kotlinx.coroutines.flow.Flow
 import kotlin.reflect.KProperty
 
@@ -11,7 +12,10 @@ class EmulatorClientBroker : ProcessExecutor {
     }
 
     private val client: EmulatorClient by lazy {
-        EmulatorProcessClient(processExecutor = this)
+        EmulatorProcessClient(
+            processExecutor = this,
+            networkSetupClient = SystemNetworkSetupClient()
+        )
     }
 
     override fun execCommand(command: String): Flow<String> {

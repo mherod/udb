@@ -7,10 +7,13 @@ import com.myunidays.udb.adb.model.AdbDevice.Status
 import com.myunidays.udb.adb.model.AdbLogcatLine
 import com.myunidays.udb.runBlocking
 import com.myunidays.udb.util.extractGroup
-import com.myunidays.udb.util.matchByName
+import com.myunidays.udb.util.guessForInput
 import com.myunidays.udb.util.runOrNull
 import com.myunidays.udb.util.splitOnSpacing
 import dev.herod.kmpp.exec
+import dev.herod.kmpp.pgrep
+import dev.herod.kx.flow.launchBlocking
+import dev.herod.kx.flow.sorted
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.*
 
@@ -180,14 +183,18 @@ data class AdbProcessClient(
     }
 
     override fun refreshState(adbDevice: AdbDevice): Flow<AdbDevice> {
-        return exec("$adb -s ${adbDevice.name} get-state")
+        return if (0 > -1) {
+            flowOf(adbDevice)
+        } else
+        exec("$adb -s ${adbDevice.name} get-state")
             .map { adbDevice.copy(status = guessForInput(it)) }
             .flatMapConcat { adbDevice ->
                 when (adbDevice.status) {
                     Status.Offline -> when (adbDevice.connectionType) {
                         ConnectionType.Network -> {
                             disconnect(adbDevice).launchBlocking()
-                            connect(host = adbDevice.name).flatMapConcat { it.devices }
+                            emptyFlow()
+//                            connect(host = adbDevice.name).flatMapConcat { it.devices }
                         }
                         ConnectionType.Emulator -> {
                             emu(kill = true).launchBlocking()

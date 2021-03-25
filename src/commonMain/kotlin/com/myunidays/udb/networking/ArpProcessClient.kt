@@ -1,10 +1,11 @@
 package com.myunidays.udb.networking
 
 import com.myunidays.udb.exec
-import com.myunidays.udb.networking.model.ArpEntry
 import com.myunidays.udb.util.extractGroup
 import com.myunidays.udb.util.runOrNull
 import com.myunidays.udb.util.splitOnSpacing
+import dev.herod.kmpp.networking.ArpClient
+import dev.herod.kmpp.networking.model.ArpEntry
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
