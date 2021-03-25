@@ -3,18 +3,17 @@ package com.myunidays.udb
 import com.myunidays.udb.adb.AdbClient
 import com.myunidays.udb.adb.EmulatorClient
 import com.myunidays.udb.adb.model.AdbDevice
-import com.myunidays.udb.adb.model.AdbDevice.ConnectionType.Emulator
-import com.myunidays.udb.adb.model.AdbDevice.ConnectionType.USB
-import com.myunidays.udb.networking.ArpClient
-import com.myunidays.udb.networking.BonjourClient
 import com.myunidays.udb.util.*
+import dev.herod.kmpp.networking.ArpClient
+import dev.herod.kmpp.networking.BonjourClient
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import kotlin.time.ExperimentalTime
-import kotlin.time.seconds
 
 class Udb(
     private val adb: AdbClient,
+    private val arpClient: ArpClient,
+    private val bonjourClient: BonjourClient
     private val emulator: EmulatorClient,
     private val arp: ArpClient,
     private val bonjour: BonjourClient,
@@ -26,18 +25,24 @@ class Udb(
     @FlowPreview
     @ExperimentalCoroutinesApi
     fun discoverAndConnect(): Flow<AdbDevice> = flow {
-        discoverHosts().flatMapMerge { host ->
-            flow {
-                supervisorScope {
-                    adb.connect(host).launchIn(this)
-                }
-                delay(5_000)
-                emit(0)
+
+        bonjourClient.queryServiceHosts("_adb._tcp.")
+            .flatMapConcat { host: String ->
+                adb.connect(host)
             }
-        }.debounce(1.seconds).flatMapConcat {
-            killLongProcesses()
-        }.toList()
-        emitAll(adb.devices())
+            .toList()
+
+        arpClient.list()
+            .flowOn(Dispatchers.Default)
+            .map { it.address }
+            .flatMapMerge { host: String ->
+                adb.connect(host)
+                    .flowOn(Dispatchers.Default)
+                    .timeout(5_000)
+            }
+            .toList()
+
+        emitAll(flow = adb.devices())
     }
 
     private fun discoverHosts(): Flow<String> = merge(

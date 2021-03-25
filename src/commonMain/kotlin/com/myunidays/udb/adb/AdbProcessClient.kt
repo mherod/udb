@@ -5,9 +5,12 @@ import com.myunidays.udb.adb.model.AdbDevice.Companion.guessDeviceType
 import com.myunidays.udb.adb.model.AdbDevice.ConnectionType
 import com.myunidays.udb.adb.model.AdbDevice.Status
 import com.myunidays.udb.adb.model.AdbLogcatLine
-import com.myunidays.udb.exec
 import com.myunidays.udb.runBlocking
-import com.myunidays.udb.util.*
+import com.myunidays.udb.util.extractGroup
+import com.myunidays.udb.util.matchByName
+import com.myunidays.udb.util.runOrNull
+import com.myunidays.udb.util.splitOnSpacing
+import dev.herod.kmpp.exec
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.*
 

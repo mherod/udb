@@ -140,7 +140,7 @@ task<Copy>("installBrewBinary") {
     into("${getenv("HOMEBREW_FORMULA_PREFIX")}/bin")
 }
 
-task<JavaExec>("run") {
+task<JavaExec>("runUdbEmulator") {
     group = "run"
     dependsOn(tasks.getByName("jvmMainClasses"))
     main = "com.myunidays.udb.cli.MainKt"
@@ -158,4 +158,15 @@ tasks.withType<Test> {
         showStackTraces = true
         showStandardStreams = true
     }
+}
+
+task<JavaExec>("runUdbNetworkScan") {
+    group = "run"
+    dependsOn(tasks.getByName("jvmMainClasses"))
+    main = "com.myunidays.udb.cli.MainKt"
+    args("devices", "--network-scan")
+    val jvm by kotlin.targets.getting
+    val main: KotlinCompilation<KotlinCommonOptions> by jvm.compilations
+    val runtimeDependencies = (main as KotlinCompilationToRunnableFiles<KotlinCommonOptions>).runtimeDependencyFiles
+    classpath = files(main.output.allOutputs, runtimeDependencies)
 }

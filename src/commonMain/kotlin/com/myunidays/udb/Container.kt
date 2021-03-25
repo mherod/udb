@@ -2,10 +2,10 @@ package com.myunidays.udb
 
 import com.myunidays.udb.adb.AdbClient
 import com.myunidays.udb.adb.EmulatorClient
-import com.myunidays.udb.networking.ArpClient
-import com.myunidays.udb.networking.ArpProcessClient
-import com.myunidays.udb.networking.BonjourClient
-import com.myunidays.udb.networking.BonjourProcessClient
+import dev.herod.kmpp.networking.ArpClient
+import dev.herod.kmpp.networking.ArpProcessClient
+import dev.herod.kmpp.networking.BonjourClient
+import dev.herod.kmpp.networking.BonjourProcessClient
 
 object Container : Injectable {
 

@@ -1,6 +1,6 @@
 package com.myunidays.udb.adb
 
-import com.myunidays.udb.exec
+import dev.herod.kmpp.exec
 import kotlinx.coroutines.flow.Flow
 
 class AdbShellSingleClient : AdbShellClient {

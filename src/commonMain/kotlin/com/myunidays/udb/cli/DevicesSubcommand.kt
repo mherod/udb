@@ -17,7 +17,7 @@ class DevicesSubcommand(
     actionDescription = "Output connected devices and emulators"
 ) {
 
-    private val wifiScan: Boolean by option(
+    private val networkScan: Boolean by option(
         type = ArgType.Boolean,
         fullName = "network-scan",
         shortName = "n",
@@ -37,7 +37,7 @@ class DevicesSubcommand(
                     println(it)
                 }
             }
-            wifiScan -> {
+            networkScan -> {
                 udb.discoverAndConnect().collect {
                     println(it)
                 }
